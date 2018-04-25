@@ -20,8 +20,8 @@ func main() {
 		log.Fatal("$SLACK_TOKEN must be set")
 	}
 
-	validation_token := os.Getenv("VALIDATION_TOKEN")
-	if validation_token == "" {
+	validationToken := os.Getenv("VALIDATION_TOKEN")
+	if validationToken == "" {
 		log.Fatal("$VALIDATION_TOKEN must be set")
 	}
 
@@ -49,7 +49,7 @@ func main() {
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
-		slashCommand.ValidateToken(validation_token)
+		slashCommand.ValidateToken(validationToken)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
@@ -62,6 +62,8 @@ func main() {
 
 func handleIt(token string, slashData slack.SlashCommand) error {
 	api := slack.New(token)
-	api.PostEphemeral(slashData.)
-	return nil
+	_, err := api.PostEphemeral(slashData.ChannelID,
+		slashData.UserID,
+		slack.MsgOptionText(slashData.Text, false))
+	return err
 }
