@@ -26,6 +26,7 @@
 [metadata.heroku]
   root-package = "github.com/king-jam/slacko-botto"
   go-version = "go1.10.1"
+  install = [ "./cmd/..." ]
   ensure = "false"
 
 [prune]
