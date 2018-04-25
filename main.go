@@ -55,7 +55,7 @@ func main() {
 		}
 		log.Printf("%+v", response)
 		tokenStore[response.UserID] = response.AccessToken
-		c.Status(http.StatusOK)
+		c.Redirect(200, "https://"+response.TeamName+".slack.com")
 	})
 
 	router.POST("/slashcommand/sbedit", func(c *gin.Context) {
