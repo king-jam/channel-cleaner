@@ -105,6 +105,7 @@ func main() {
 
 	router.POST("/slashcommand/dr", func(c *gin.Context) {
 		slashCommand, err := slack.SlashCommandParse(c.Request)
+		log.Printf("%+s", slashCommand.Text)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
@@ -124,13 +125,13 @@ func main() {
 		params := slack.NewPostMessageParameters()
 		params.AsUser = true
 		params.Username = slashCommand.UserName
-		channel, ts, err := api.PostMessage(slashCommand.ChannelID, text,
+		_, ts, err := api.PostMessage(slashCommand.ChannelID, text,
 			params)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
 		deleteTime := time.Now().Add(delayTime)
-		if err := qc.QueueDelayedDelete(t.AccessToken, channel, ts, deleteTime); err != nil {
+		if err := qc.QueueDelayedDelete(t.AccessToken, slashCommand.ChannelID, ts, deleteTime); err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
 		c.Status(http.StatusOK)
@@ -154,20 +155,6 @@ func main() {
 	})
 
 	router.Run(":" + port)
-}
-
-func handleIt(token string, slashData slack.SlashCommand) error {
-	api := slack.New(token)
-	params := slack.NewPostMessageParameters()
-	params.AsUser = true
-	params.Username = slashData.UserName
-	channel, ts, err := api.PostMessage(slashData.ChannelID, "random",
-		params)
-	if err != nil {
-		return err
-	}
-	_, _, _, err = api.UpdateMessage(channel, ts, slashData.Text)
-	return err
 }
 
 func parseText(rawText string) (string, time.Duration, error) {
