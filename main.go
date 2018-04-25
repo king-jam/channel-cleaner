@@ -3,19 +3,32 @@ package main
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/king-jam/slacko-botto/backend"
 	"github.com/nlopes/slack"
 )
 
-var tokenStore map[string]string
-
 func main() {
-	tokenStore = make(map[string]string)
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("$PORT must be set")
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("$PORT must be set")
+	}
+	url, err := url.Parse(dbURL)
+	if err != nil {
+		log.Fatal("Invalid Database URL format")
+	}
+
+	db, err := backend.InitDatabase(url)
+	if err != nil {
+		log.Fatal("Unable to initialize the Database")
 	}
 
 	clientID := os.Getenv("CLIENT_ID")
@@ -43,7 +56,7 @@ func main() {
 
 	router.LoadHTMLFiles("static/add_to_slack.html")
 
-	router.GET("/add", func(c *gin.Context) {
+	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "add_to_slack.html", nil)
 	})
 
@@ -54,7 +67,12 @@ func main() {
 			c.Status(http.StatusInternalServerError)
 		}
 		log.Printf("%+v", response)
-		tokenStore[response.UserID] = response.AccessToken
+		err = db.CreateTokenData(&backend.TokenData{
+			OAuthResponse: *response,
+		})
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Redirect(303, "https://"+response.TeamName+".slack.com")
 	})
 
@@ -67,11 +85,11 @@ func main() {
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
-		token, ok := tokenStore[slashCommand.UserID]
-		if !ok {
+		t, err := db.GetTokenDataByUserID(slashCommand.UserID)
+		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
-		handleIt(token, slashCommand)
+		handleIt(t.AccessToken, slashCommand)
 		c.Status(http.StatusOK)
 	})
 
