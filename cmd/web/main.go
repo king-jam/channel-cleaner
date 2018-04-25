@@ -1,15 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/king-jam/slacko-botto/backend"
+	"github.com/king-jam/slacko-botto/queue"
 	"github.com/nlopes/slack"
 )
+
+var defaultDeleteDelay = 2 * time.Minute
 
 func main() {
 	port := os.Getenv("PORT")
@@ -17,19 +24,26 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Fatal("$PORT must be set")
+	dbString := os.Getenv("DATABASE_URL")
+	if dbString == "" {
+		log.Fatal("$DATABASE_URL must be set")
 	}
-	url, err := url.Parse(dbURL)
+	dbURL, err := url.Parse(dbString)
 	if err != nil {
 		log.Fatal("Invalid Database URL format")
 	}
 
-	db, err := backend.InitDatabase(url)
+	db, err := backend.InitDatabase(dbURL)
 	if err != nil {
 		log.Fatal("Unable to initialize the Database")
 	}
+	defer db.Close()
+
+	qc, err := queue.NewQueue(dbURL)
+	if err != nil {
+		log.Fatal("Unable to initialize the Database")
+	}
+	defer qc.Close()
 
 	clientID := os.Getenv("CLIENT_ID")
 	if clientID == "" {
@@ -53,7 +67,6 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
-
 	router.LoadHTMLFiles("static/add_to_slack.html")
 
 	router.GET("/", func(c *gin.Context) {
@@ -90,7 +103,7 @@ func main() {
 		c.Redirect(303, "https://"+response.TeamName+".slack.com")
 	})
 
-	router.POST("/slashcommand/sbedit", func(c *gin.Context) {
+	router.POST("/slashcommand/dr", func(c *gin.Context) {
 		slashCommand, err := slack.SlashCommandParse(c.Request)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -103,7 +116,38 @@ func main() {
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
-		handleIt(t.AccessToken, slashCommand)
+		text, delayTime, err := parseText(slashCommand.Text)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		api := slack.New(t.AccessToken)
+		params := slack.NewPostMessageParameters()
+		params.AsUser = true
+		params.Username = slashCommand.UserName
+		channel, ts, err := api.PostMessage(slashCommand.ChannelID, text,
+			params)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		deleteTime := time.Now().Add(delayTime)
+		qc.QueueDelayedDelete(t.AccessToken, channel, ts, deleteTime)
+		c.Status(http.StatusOK)
+	})
+
+	router.POST("/slashcommand/clean", func(c *gin.Context) {
+		// slashCommand, err := slack.SlashCommandParse(c.Request)
+		// if err != nil {
+		// 	c.Status(http.StatusInternalServerError)
+		// }
+		// slashCommand.ValidateToken(verificationToken)
+		// if err != nil {
+		// 	c.Status(http.StatusInternalServerError)
+		// }
+		// t, err := db.GetTokenDataByUserID(slashCommand.UserID)
+		// if err != nil {
+		// 	c.Status(http.StatusInternalServerError)
+		// }
+		// handleIt(t.AccessToken, slashCommand)
 		c.Status(http.StatusOK)
 	})
 
@@ -122,4 +166,23 @@ func handleIt(token string, slashData slack.SlashCommand) error {
 	}
 	_, _, _, err = api.UpdateMessage(channel, ts, slashData.Text)
 	return err
+}
+
+func parseText(rawText string) (string, time.Duration, error) {
+	text := strings.Split(rawText, " ")
+	if len(text) != 2 {
+		return "", 0, fmt.Errorf("Invalid Request")
+	}
+	minutes, err := strconv.Atoi(text[1])
+	if err != nil {
+		return "", 0, fmt.Errorf("Invalid Request")
+	}
+	if len(text) != 2 {
+		return "", 0, fmt.Errorf("Invalid Request")
+	}
+	if minutes < 1 || minutes > 15 {
+		return "", 0, fmt.Errorf("Invalid Request")
+	}
+	delay := time.Minute * time.Duration(minutes)
+	return text[0], delay, nil
 }
