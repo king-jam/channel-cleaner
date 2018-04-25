@@ -24,11 +24,16 @@ func InitDatabase(url *url.URL) (*Backend, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
 	db.DB().SetMaxIdleConns(20)
-
 	// SetMaxOpenConns sets the maximum number of open connections to the database.
 	db.DB().SetMaxOpenConns(20)
+
+	if !db.HasTable(&TokenData{}) {
+		db.CreateTable(&TokenData{})
+	}
+
 	return &Backend{
 		db: db,
 	}, nil

@@ -26,7 +26,7 @@ func (b *Backend) CreateTokenData(t *TokenData) error {
 }
 
 // GetTokenDataByUserID gets token data by the UserID
-func (b *Backend) GetTokenDataByUserID(id string) (*TokenData, error) {
+func (b *Backend) GetTokenDataByUserID(id string) (TokenData, error) {
 	var t TokenData
 	oauthFilter := slack.OAuthResponse{
 		UserID: id,
@@ -35,7 +35,7 @@ func (b *Backend) GetTokenDataByUserID(id string) (*TokenData, error) {
 		OAuthResponse: oauthFilter,
 	}
 	if result := b.db.Where(&filter).First(&t); result.Error != nil {
-		return nil, ErrDatabaseGeneral(result.Error.Error())
+		return t, ErrDatabaseGeneral(result.Error.Error())
 	}
-	return &t, nil
+	return t, nil
 }
