@@ -16,7 +16,8 @@ import (
 	"github.com/nlopes/slack"
 )
 
-var defaultDeleteDelay = 2 * time.Minute
+var defaultDeleteDelay = 5 * time.Minute
+var deployedURL = "https://slacko-botto.herokuapp.com/"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -103,7 +104,7 @@ func main() {
 		c.Redirect(303, "https://"+response.TeamName+".slack.com")
 	})
 
-	router.POST("/slashcommand/dr", func(c *gin.Context) {
+	router.POST("/slashcommand/tmp", func(c *gin.Context) {
 		slashCommand, err := slack.SlashCommandParse(c.Request)
 		log.Printf("%+s", slashCommand.Text)
 		if err != nil {
@@ -115,9 +116,45 @@ func main() {
 		}
 		t, err := db.GetTokenDataByUserID(slashCommand.UserID)
 		if err != nil {
+			if err == backend.ErrRecordNotFound {
+				c.JSON(http.StatusOK, userNotFoundMessage())
+			}
 			c.Status(http.StatusInternalServerError)
 		}
-		text, delayTime, err := parseText(slashCommand.Text)
+		api := slack.New(t.AccessToken)
+		params := slack.NewPostMessageParameters()
+		params.AsUser = true
+		params.Username = slashCommand.UserName
+		_, ts, err := api.PostMessage(slashCommand.ChannelID, slashCommand.Text,
+			params)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		deleteTime := time.Now().Add(defaultDeleteDelay)
+		if err := qc.QueueDelayedDelete(t.AccessToken, slashCommand.ChannelID, ts, deleteTime); err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Status(http.StatusOK)
+	})
+
+	router.POST("/slashcommand/tmpt", func(c *gin.Context) {
+		slashCommand, err := slack.SlashCommandParse(c.Request)
+		log.Printf("%+s", slashCommand.Text)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		slashCommand.ValidateToken(verificationToken)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		t, err := db.GetTokenDataByUserID(slashCommand.UserID)
+		if err != nil {
+			if err == backend.ErrRecordNotFound {
+				c.JSON(http.StatusOK, userNotFoundMessage())
+			}
+			c.Status(http.StatusInternalServerError)
+		}
+		text, delayTime, err := parseTextForTimeout(slashCommand.Text)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
@@ -157,21 +194,29 @@ func main() {
 	router.Run(":" + port)
 }
 
-func parseText(rawText string) (string, time.Duration, error) {
-	text := strings.Split(rawText, " ")
-	if len(text) != 2 {
-		return "", 0, fmt.Errorf("Invalid Request")
+func userNotFoundMessage() slack.Msg {
+	return slack.Msg{
+		Text:         "Please authorize this app before continuing: " + deployedURL,
+		ResponseType: "ephemeral",
 	}
-	minutes, err := strconv.Atoi(text[1])
+}
+
+func errorResponseMessage(errorString string) slack.Msg {
+	return slack.Msg{
+		Text:         errorString,
+		ResponseType: "ephemeral",
+	}
+}
+
+func parseTextForTimeout(rawText string) (string, time.Duration, error) {
+	text := strings.Split(rawText, " ")
+	minutes, err := strconv.Atoi(text[len(text)-1])
 	if err != nil {
 		return "", 0, fmt.Errorf("Invalid Request")
 	}
-	if len(text) != 2 {
-		return "", 0, fmt.Errorf("Invalid Request")
-	}
-	if minutes < 1 || minutes > 15 {
+	if minutes > 15 {
 		return "", 0, fmt.Errorf("Invalid Request")
 	}
 	delay := time.Minute * time.Duration(minutes)
-	return text[0], delay, nil
+	return strings.Join(text[:len(text)-1], " "), delay, nil
 }
