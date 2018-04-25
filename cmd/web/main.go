@@ -130,7 +130,9 @@ func main() {
 			c.Status(http.StatusInternalServerError)
 		}
 		deleteTime := time.Now().Add(delayTime)
-		qc.QueueDelayedDelete(t.AccessToken, channel, ts, deleteTime)
+		if err := qc.QueueDelayedDelete(t.AccessToken, channel, ts, deleteTime); err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Status(http.StatusOK)
 	})
 
