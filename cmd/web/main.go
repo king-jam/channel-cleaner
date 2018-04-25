@@ -14,6 +14,8 @@ import (
 	"github.com/king-jam/slacko-botto/backend"
 	"github.com/king-jam/slacko-botto/queue"
 	"github.com/nlopes/slack"
+
+	_ "github.com/heroku/x/hmetrics/onload" // heroku metrics
 )
 
 var defaultDeleteDelay = 5 * time.Minute

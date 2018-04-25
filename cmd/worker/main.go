@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"github.com/king-jam/slacko-botto/queue"
+
+	_ "github.com/heroku/x/hmetrics/onload" // heroku metrics
 )
 
 func main() {
