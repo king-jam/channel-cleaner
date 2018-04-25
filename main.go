@@ -66,12 +66,26 @@ func main() {
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
-		log.Printf("%+v", response)
-		err = db.CreateTokenData(&backend.TokenData{
-			OAuthResponse: *response,
-		})
+		t, err := db.GetTokenDataByUserID(response.UserID)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			if err == backend.ErrRecordNotFound {
+				err = db.CreateTokenData(&backend.TokenData{
+					OAuthResponse: *response,
+				})
+				if err != nil {
+					c.Status(http.StatusInternalServerError)
+				}
+			} else {
+				c.Status(http.StatusInternalServerError)
+			}
+		} else {
+			updated := backend.TokenData{
+				OAuthResponse: *response,
+			}
+			updated.ID = t.ID
+			if err := db.UpdateTokenData(&updated); err != nil {
+				c.Status(http.StatusInternalServerError)
+			}
 		}
 		c.Redirect(303, "https://"+response.TeamName+".slack.com")
 	})

@@ -1,6 +1,14 @@
 package backend
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	// ErrRecordNotFound record not found error, happens when haven't find any matched data when looking up with a struct
+	ErrRecordNotFound = errors.New("record not found")
+)
 
 // ErrDatabaseGeneral is a generic error wrapper for unexplained errors
 type ErrDatabaseGeneral string

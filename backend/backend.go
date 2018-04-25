@@ -1,16 +1,10 @@
 package backend
 
 import (
-	"errors"
 	"net/url"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // per gorm
-)
-
-var (
-	// ErrRecordNotFound record not found error, happens when haven't find any matched data when looking up with a struct
-	ErrRecordNotFound = errors.New("record not found")
 )
 
 // Backend stores all the Database internals for data access
