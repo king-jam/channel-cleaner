@@ -12,6 +12,7 @@ import (
 var tokenStore map[string]string
 
 func main() {
+	tokenStore = make(map[string]string)
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("$PORT must be set")
