@@ -24,10 +24,22 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
   version = "v0.0.3"
+
+[[projects]]
+  name = "github.com/nlopes/slack"
+  packages = ["."]
+  revision = "8ab4d0b364ef1e9af5d102531da20d5ec902b6c4"
+  version = "v0.2.0"
 
 [[projects]]
   name = "github.com/ugorji/go"
@@ -56,6 +68,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1a7c1af25b9e5237b765e696450bdd4293f883771343f69f97048229c28a98b2"
+  inputs-digest = "28c2e1cd3b5bc7fc13600357a9a5182ab7e9b2f66fc5de95e3e36833ef625f05"
   solver-name = "gps-cdcl"
   solver-version = 1
