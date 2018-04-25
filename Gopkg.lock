@@ -36,6 +36,15 @@
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/heroku/x"
+  packages = [
+    "hmetrics",
+    "hmetrics/onload"
+  ]
+  revision = "e027b57be83570b92aeefcdad710e38695d5999b"
+
+[[projects]]
   name = "github.com/jackc/pgx"
   packages = [
     ".",
@@ -118,6 +127,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6663f1cb5d847428aadafdc3ebbe9a572a171b8f6e9acf1807aaa78821c217ae"
+  inputs-digest = "b64e4dc61f2f4edc38c2bb113353930e2d81aa2834dc4b1945eb194af21c69fc"
   solver-name = "gps-cdcl"
   solver-version = 1
