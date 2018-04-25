@@ -88,9 +88,11 @@ func main() {
 				})
 				if err != nil {
 					c.Status(http.StatusInternalServerError)
+					return
 				}
 			} else {
 				c.Status(http.StatusInternalServerError)
+				return
 			}
 		} else {
 			updated := backend.TokenData{
@@ -99,6 +101,7 @@ func main() {
 			updated.ID = t.ID
 			if err := db.UpdateTokenData(&updated); err != nil {
 				c.Status(http.StatusInternalServerError)
+				return
 			}
 		}
 		c.Redirect(303, "https://"+response.TeamName+".slack.com")
@@ -106,20 +109,23 @@ func main() {
 
 	router.POST("/slashcommand/tmp", func(c *gin.Context) {
 		slashCommand, err := slack.SlashCommandParse(c.Request)
-		log.Printf("%+s", slashCommand.Text)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		slashCommand.ValidateToken(verificationToken)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		t, err := db.GetTokenDataByUserID(slashCommand.UserID)
 		if err != nil {
 			if err == backend.ErrRecordNotFound {
 				c.JSON(http.StatusOK, userNotFoundMessage())
+				return
 			}
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		api := slack.New(t.AccessToken)
 		params := slack.NewPostMessageParameters()
@@ -129,34 +135,40 @@ func main() {
 			params)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		deleteTime := time.Now().Add(defaultDeleteDelay)
 		if err := qc.QueueDelayedDelete(t.AccessToken, slashCommand.ChannelID, ts, deleteTime); err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		c.Status(http.StatusOK)
 	})
 
 	router.POST("/slashcommand/tmpt", func(c *gin.Context) {
 		slashCommand, err := slack.SlashCommandParse(c.Request)
-		log.Printf("%+s", slashCommand.Text)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		slashCommand.ValidateToken(verificationToken)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		t, err := db.GetTokenDataByUserID(slashCommand.UserID)
 		if err != nil {
 			if err == backend.ErrRecordNotFound {
 				c.JSON(http.StatusOK, userNotFoundMessage())
+				return
 			}
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		text, delayTime, err := parseTextForTimeout(slashCommand.Text)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		api := slack.New(t.AccessToken)
 		params := slack.NewPostMessageParameters()
@@ -166,10 +178,12 @@ func main() {
 			params)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		deleteTime := time.Now().Add(delayTime)
 		if err := qc.QueueDelayedDelete(t.AccessToken, slashCommand.ChannelID, ts, deleteTime); err != nil {
 			c.Status(http.StatusInternalServerError)
+			return
 		}
 		c.Status(http.StatusOK)
 	})
