@@ -53,6 +53,7 @@ func main() {
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 		}
+		log.Printf("%+v", response)
 		tokenStore[response.UserID] = response.AccessToken
 		c.Status(http.StatusOK)
 	})
