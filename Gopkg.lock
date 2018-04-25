@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/bgentry/que-go"
+  packages = ["."]
+  revision = "04623be4201ec7abb8d6cd0f172a4c612e216cc4"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/gin-contrib/sse"
   packages = ["."]
@@ -28,6 +34,19 @@
   packages = ["."]
   revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
   version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/jackc/pgx"
+  packages = [
+    ".",
+    "chunkreader",
+    "internal/sanitize",
+    "pgio",
+    "pgproto3",
+    "pgtype"
+  ]
+  revision = "da3231b0b66e2e74cdb779f1d46c5e958ba8be27"
+  version = "v3.1.0"
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
@@ -67,6 +86,12 @@
   version = "v0.2.0"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   name = "github.com/ugorji/go"
   packages = ["codec"]
   revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
@@ -93,6 +118,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9b36ce7d018accc38719aa932430df521de87c9b18ae24681f792d2b795afb5f"
+  inputs-digest = "6663f1cb5d847428aadafdc3ebbe9a572a171b8f6e9acf1807aaa78821c217ae"
   solver-name = "gps-cdcl"
   solver-version = 1
