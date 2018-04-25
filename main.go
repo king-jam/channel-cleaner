@@ -62,8 +62,14 @@ func main() {
 
 func handleIt(token string, slashData slack.SlashCommand) error {
 	api := slack.New(token)
-	_, err := api.PostEphemeral(slashData.ChannelID,
-		slashData.UserID,
-		slack.MsgOptionText(slashData.Text, false))
+	params := slack.NewPostMessageParameters()
+	params.AsUser = true
+	params.Username = slashData.UserName
+	channel, ts, err := api.PostMessage(slashData.ChannelID, "random",
+		params)
+	if err != nil {
+		return err
+	}
+	_, _, _, err = api.UpdateMessage(channel, ts, slashData.Text)
 	return err
 }
