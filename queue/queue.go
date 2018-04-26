@@ -58,11 +58,11 @@ func NewQueue(dbURL *url.URL) (*Queue, error) {
 
 // Close cleanups up the queue
 func (q *Queue) Close() {
-	if q.pgxpool != nil {
-		q.pgxpool.Close()
-	}
 	if q.workers != nil {
 		q.workers.Shutdown()
+	}
+	if q.pgxpool != nil {
+		q.pgxpool.Close()
 	}
 }
 
