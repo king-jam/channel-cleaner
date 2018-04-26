@@ -7,7 +7,6 @@ import (
 
 	que "github.com/bgentry/que-go"
 	"github.com/jackc/pgx"
-	"github.com/nlopes/slack"
 )
 
 var (
@@ -26,8 +25,10 @@ type DelayedDeleteRequest struct {
 
 // CleanChannelRequest is the struct for doing a channel cleanup
 type CleanChannelRequest struct {
-	UserToken string `json:"user_token"`
-	slack.SlashCommand
+	Token   string           `json:"token"`
+	Channel string           `json:"channel_id"`
+	UserID  string           `json:"user_id"`
+	Options CleanChannelOpts `json:"command_options"`
 }
 
 // Queue is a job queue to pass messages between the web thread and workers
@@ -46,6 +47,7 @@ func NewQueue(dbURL *url.URL) (*Queue, error) {
 	}
 	wm := &que.WorkMap{
 		DelayedDeleteJob: delayedDelete,
+		CleanChannelJob:  cleanchannel,
 	}
 	return &Queue{
 		qc:      qc,
@@ -65,17 +67,22 @@ func (q *Queue) Close() {
 }
 
 // QueueCleanChannel enqueues a cleanup channel job
-func (q *Queue) QueueCleanChannel(token string, slashData slack.SlashCommand) error {
-	return nil
-	// args, err := json.Marshal(nil)
-	// if err != nil {
-	// 	return err
-	// }
-	// j := que.Job{
-	// 	Type: cleanChannelJob,
-	// 	Args: args,
-	// }
-	// return q.qc.Enqueue(&j)
+func (q *Queue) QueueCleanChannel(token, channel, userID string, options CleanChannelOpts) error {
+	req := CleanChannelRequest{
+		Token:   token,
+		Channel: channel,
+		UserID:  userID,
+		Options: options,
+	}
+	args, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+	j := que.Job{
+		Type: CleanChannelJob,
+		Args: args,
+	}
+	return q.qc.Enqueue(&j)
 }
 
 // QueueDelayedDelete enqueues a delayed message delete job

@@ -21,6 +21,12 @@ import (
 var defaultDeleteDelay = 5 * time.Minute
 var deployedURL = "https://slacko-botto.herokuapp.com/"
 
+var defaultCleanupOptions = queue.CleanChannelOpts{
+	Messages: true,
+	Files:    true,
+	Bots:     true,
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -115,8 +121,7 @@ func main() {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		slashCommand.ValidateToken(verificationToken)
-		if err != nil {
+		if !slashCommand.ValidateToken(verificationToken) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -153,8 +158,7 @@ func main() {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		slashCommand.ValidateToken(verificationToken)
-		if err != nil {
+		if !slashCommand.ValidateToken(verificationToken) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -191,20 +195,37 @@ func main() {
 	})
 
 	router.POST("/slashcommand/clean", func(c *gin.Context) {
-		// slashCommand, err := slack.SlashCommandParse(c.Request)
-		// if err != nil {
-		// 	c.Status(http.StatusInternalServerError)
-		// }
-		// slashCommand.ValidateToken(verificationToken)
-		// if err != nil {
-		// 	c.Status(http.StatusInternalServerError)
-		// }
-		// t, err := db.GetTokenDataByUserID(slashCommand.UserID)
-		// if err != nil {
-		// 	c.Status(http.StatusInternalServerError)
-		// }
-		// handleIt(t.AccessToken, slashCommand)
-		c.Status(http.StatusOK)
+		slashCommand, err := slack.SlashCommandParse(c.Request)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		if !slashCommand.ValidateToken(verificationToken) {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		t, err := db.GetTokenDataByUserID(slashCommand.UserID)
+		if err != nil {
+			if err == backend.ErrRecordNotFound {
+				c.JSON(http.StatusOK, userNotFoundMessage())
+				return
+			}
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		opts, err := parseCleanChannelOptions(slashCommand.Text)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		if err := qc.QueueCleanChannel(t.AccessToken, slashCommand.ChannelID, slashCommand.UserID, opts); err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		c.JSON(http.StatusOK, slack.Msg{
+			ResponseType: "ephemeral",
+			Text:         "Cleanup Request Scheduled",
+		})
 	})
 
 	router.Run(":" + port)
@@ -235,4 +256,32 @@ func parseTextForTimeout(rawText string) (string, time.Duration, error) {
 	}
 	delay := time.Minute * time.Duration(minutes)
 	return strings.Join(text[:len(text)-1], " "), delay, nil
+}
+
+func parseCleanChannelOptions(rawText string) (queue.CleanChannelOpts, error) {
+	text := strings.Split(rawText, " ")
+	if len(text) == 0 {
+		// using defaults
+		return defaultCleanupOptions, nil
+	}
+	if len(text) != 3 {
+		return queue.CleanChannelOpts{}, fmt.Errorf("Invalid Request")
+	}
+	delMsgs, err := strconv.ParseBool(text[0])
+	if err != nil {
+		return queue.CleanChannelOpts{}, fmt.Errorf("Invalid Request")
+	}
+	delFiles, err := strconv.ParseBool(text[1])
+	if err != nil {
+		return queue.CleanChannelOpts{}, fmt.Errorf("Invalid Request")
+	}
+	delBotMsgs, err := strconv.ParseBool(text[2])
+	if err != nil {
+		return queue.CleanChannelOpts{}, fmt.Errorf("Invalid Request")
+	}
+	return queue.CleanChannelOpts{
+		Messages: delMsgs,
+		Files:    delFiles,
+		Bots:     delBotMsgs,
+	}, nil
 }
