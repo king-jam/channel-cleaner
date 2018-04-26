@@ -18,7 +18,7 @@ type CleanChannelOpts struct {
 	Bots     bool `json:"delete_bot_messages"`
 }
 
-func cleanchannel(j *que.Job) error {
+func cleanChannel(j *que.Job) error {
 	var ccr CleanChannelRequest
 	var more bool
 	if err := json.Unmarshal(j.Args, &ccr); err != nil {

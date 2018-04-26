@@ -47,7 +47,7 @@ func NewQueue(dbURL *url.URL) (*Queue, error) {
 	}
 	wm := &que.WorkMap{
 		DelayedDeleteJob: delayedDelete,
-		CleanChannelJob:  cleanchannel,
+		CleanChannelJob:  cleanChannel,
 	}
 	return &Queue{
 		qc:      qc,
