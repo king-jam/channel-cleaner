@@ -49,6 +49,7 @@ func cleanChannel(j *que.Job) error {
 							if err != nil {
 								return err
 							}
+							time.Sleep(rateLimitDelay)
 						}
 					}
 					if ccr.Options.Bots {
@@ -57,12 +58,11 @@ func cleanChannel(j *que.Job) error {
 							if err != nil {
 								return err
 							}
+							time.Sleep(rateLimitDelay)
 						}
 					}
 				}
-				time.Sleep(rateLimitDelay)
 			}
-			time.Sleep(rateLimitDelay)
 		}
 	}
 	if ccr.Options.Files {
@@ -86,7 +86,6 @@ func cleanChannel(j *que.Job) error {
 				}
 				time.Sleep(rateLimitDelay)
 			}
-			time.Sleep(rateLimitDelay)
 		}
 	}
 	return nil
