@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -54,6 +57,8 @@ func main() {
 	}
 	defer qc.Close()
 
+	qc.InitWorkerPool(2)
+
 	clientID := os.Getenv("CLIENT_ID")
 	if clientID == "" {
 		log.Fatal("$CLIENT_ID must be set")
@@ -73,6 +78,10 @@ func main() {
 	if redirectURI == "" {
 		log.Fatal("$REDIRECT_URI must be set")
 	}
+
+	// Catch signal so we can shutdown gracefully
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
 
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -228,7 +237,30 @@ func main() {
 		})
 	})
 
-	router.Run(":" + port)
+	go qc.StartWorkers()
+
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+	}
+
+	go func() {
+		// service connections
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Listen Error: %s\n", err)
+		}
+	}()
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Fatal("Server Shutdown:", err)
+		}
+	}()
+
+	// Wait for a signal
+	sig := <-sigCh
+	log.Printf("%s Signal received. Shutting down Application.", sig.String())
 }
 
 func userNotFoundMessage() slack.Msg {
@@ -259,6 +291,9 @@ func parseTextForTimeout(rawText string) (string, time.Duration, error) {
 }
 
 func parseCleanChannelOptions(rawText string) (queue.CleanChannelOpts, error) {
+	if rawText == "" {
+		return defaultCleanupOptions, nil
+	}
 	text := strings.Split(rawText, " ")
 	if len(text) == 0 {
 		// using defaults
