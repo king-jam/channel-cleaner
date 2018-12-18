@@ -1,5 +1,7 @@
 module github.com/king-jam/channel-cleaner
 
+// +heroku install ./cmd/...
+
 require (
 	github.com/bgentry/que-go v1.0.1 // indirect
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
