@@ -1,0 +1,56 @@
+# github.com/bgentry/que-go v1.0.1
+github.com/bgentry/que-go
+# github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
+github.com/gin-contrib/sse
+# github.com/gin-gonic/gin v1.3.0
+github.com/gin-gonic/gin
+github.com/gin-gonic/gin/binding
+github.com/gin-gonic/gin/json
+github.com/gin-gonic/gin/render
+# github.com/golang/protobuf v1.2.0
+github.com/golang/protobuf/proto
+# github.com/gorilla/websocket v1.4.0
+github.com/gorilla/websocket
+# github.com/heroku/x v0.0.0-20181102215100-85e5aa5e6aa1
+github.com/heroku/x/hmetrics/onload
+github.com/heroku/x/hmetrics
+# github.com/jackc/pgx v3.3.0+incompatible
+github.com/jackc/pgx
+github.com/jackc/pgx/pgtype
+github.com/jackc/pgx/internal/sanitize
+github.com/jackc/pgx/pgio
+github.com/jackc/pgx/pgproto3
+github.com/jackc/pgx/chunkreader
+# github.com/jinzhu/gorm v1.9.2
+github.com/jinzhu/gorm
+github.com/jinzhu/gorm/dialects/postgres
+# github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
+github.com/jinzhu/inflection
+# github.com/json-iterator/go v1.1.5
+github.com/json-iterator/go
+# github.com/king-jam/slacko-botto v0.0.0-20181217222332-220d95ee22a6
+github.com/king-jam/slacko-botto/backend
+github.com/king-jam/slacko-botto/queue
+# github.com/lib/pq v1.0.0
+github.com/lib/pq
+github.com/lib/pq/hstore
+github.com/lib/pq/oid
+# github.com/mattn/go-isatty v0.0.4
+github.com/mattn/go-isatty
+# github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+github.com/modern-go/concurrent
+# github.com/modern-go/reflect2 v1.0.1
+github.com/modern-go/reflect2
+# github.com/nlopes/slack v0.4.0
+github.com/nlopes/slack
+github.com/nlopes/slack/slackutilsx
+# github.com/pkg/errors v0.8.0
+github.com/pkg/errors
+# github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2
+github.com/ugorji/go/codec
+# golang.org/x/sys v0.0.0-20181217223516-dcdaa6325bcb
+golang.org/x/sys/unix
+# gopkg.in/go-playground/validator.v8 v8.18.2
+gopkg.in/go-playground/validator.v8
+# gopkg.in/yaml.v2 v2.2.2
+gopkg.in/yaml.v2
